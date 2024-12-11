@@ -28,7 +28,8 @@ For any questions or feedback, please contact us at adel_alfa@hotmail.com.
 Special thanks to all contributors and supporters of this project.
 ## Demo Video 
 
-[![PhoneShopServer](https://github.com/user-attachments/assets/bdc738ab-35c3-4d9d-8f13-b87270dc2ef5)](https://drive.google.com/file/d/1nPUzvI5kYccRLqqBwaxVauH4oxSnzSp7/view)
+[![image alt](https://github.com/Adel-alfa/EcommercePhoneShopSolution/blob/master/PhoneShopServerScreenshot.png?raw=true
+)](https://drive.google.com/file/d/1nPUzvI5kYccRLqqBwaxVauH4oxSnzSp7/view)
 
 
 ## Français
