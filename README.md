@@ -23,7 +23,7 @@ This repository contains an e-commerce solution for a phone shop built using .NE
 - docker-compose build 
 - docker-compose up
 ## Contact
-For any questions or feedback, please contact us at ade_alfal@hotmail.com.
+For any questions or feedback, please contact us at adel_alfa@hotmail.com.
 ## Acknowledgments
 Special thanks to all contributors and supporters of this project.
 ## Demo Video 
