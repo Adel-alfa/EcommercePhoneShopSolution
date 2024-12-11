@@ -1,0 +1,24 @@
+﻿@if (!ProductService.IsVisable)
+{
+    <CarouselComponent ProductLists="FeaturedProductList" defaultItemId="defaultItemId" />
+}
+
+
+@code {
+    List<Product>? FeaturedProductList = new();
+    private int defaultItemId;
+    protected override async Task OnInitializedAsync()
+    {
+        bool featured = true;
+        await ProductService.GetAllProducts(featured);
+       
+     
+        if (ProductService.FeaturedProducts is not null)
+        {
+            FeaturedProductList = ProductService.FeaturedProducts.OrderByDescending(_ => _.DateUpLoad).Take(5).ToList();
+            defaultItemId = FeaturedProductList.Last().Id;
+        }
+        ProductService.ProductAction += StateHasChanged;
+    }
+    
+}

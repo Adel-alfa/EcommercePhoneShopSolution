@@ -1,0 +1,46 @@
+﻿
+.carousel-control-next-icon,
+.carousel-control-prev-icon {
+    filter: invert(20%); 
+    background-color: #ffa96f; 
+    border-radius: 90%;
+}
+
+    
+    .carousel-control-next-icon:hover,
+    .carousel-control-prev-icon:hover {
+        background-color: #d65500;
+    }
+.carousel-indicators [data-bs-target] {
+    width: 30px; 
+    height: 2px;
+    background-color: #ff5722;
+    border: 2px solid #ff5722; 
+    border-radius: 35%; 
+    opacity: 0.9; 
+}
+
+.carousel-indicators .active {
+    background-color: #833500; 
+    border: 2px solid #833500; 
+    opacity: 1; 
+}
+
+
+.carousel-indicators [data-bs-target]:hover {
+    background-color: #833500; 
+    border: 2px solid #833500;
+    opacity: 0.9; 
+}
+
+.btn-My {
+    background: rgba(255, 180, 50, .9);
+    border-color: #ffffff;
+    color: #0F172B;
+}
+
+    .btn-My:hover {
+        background: rgba(255, 255, 255, .9);
+        border: 2px solid #833500;
+        color: #0F172B;
+    }

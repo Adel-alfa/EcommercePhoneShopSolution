@@ -1,0 +1,80 @@
+﻿@page "/account/register"
+
+
+@implements IDisposable
+
+<div class="container mt-5">
+    <div class="row d-flex justify-content-md-center">
+            <div class="col-lg-6">
+                <EditForm Model="@Input" Enhance OnValidSubmit="RegisterUser" FormName="register">
+                <DataAnnotationsValidator />
+                <ValidationSummary class="text-danger" role="alert" />
+                <div class="card">
+                    <div class="card-header">  Créer un compte </div>
+                    
+                    <div class="card-body">
+                        <div class="form-floating mb-3">
+                            <InputText @bind-Value="Input.Name" class="form-control" autocomplete="firstname" aria-required="true" />
+                            <label for="firstname">Prénom Nom </label>
+                            <ValidationMessage For="() => Input.Name" class="text-danger" />
+                        </div>
+                        <div class="form-floating mb-3">
+                            <InputText @bind-Value="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
+                            <label for="email">E-mail</label>
+                            <ValidationMessage For="() => Input.Email" class="text-danger" />
+                        </div>
+                        <div class="form-floating mb-3">
+                            <InputText type="password" @bind-Value="Input.Password" class="form-control" autocomplete="new-password" aria-required="true" placeholder="password" />
+                            <label for="password">Mot de passe</label>
+                            <ValidationMessage For="() => Input.Password" class="text-danger" />
+                        </div>
+                        <div class="form-floating mb-3">
+                            <InputText type="password" @bind-Value="Input.ConfirmPassword" class="form-control" autocomplete="new-password" aria-required="true" placeholder="password" />
+                            <label for="confirm-password">Confirmer le mot de passe</label>
+                            <ValidationMessage For="() => Input.ConfirmPassword" class="text-danger" />
+                        </div>
+
+                        <div class="from-group mt-3">
+                            @if (messageDialogService.ShowSaveButton)
+                            {
+                                <button type="submit" class="w-100 btn btn-lg btn-outline-primary">Register</button>
+                            }
+                            <BusyButtonComponent ShowBusyButton="messageDialogService.ShowBusyButton"/>
+                        </div>
+                    </div>
+                </div>
+               
+                
+                </EditForm>
+        </div>
+    </div>
+</div>
+<MessageDialog @ref="messageDialogService.messageDialog" />
+@code {
+    UserDTO Input = new();
+    protected  override void OnInitialized()
+    {
+        messageDialogService.Action += StateHasChanged;
+    }
+    public async Task RegisterUser(EditContext editContext)
+    {
+        messageDialogService.ShowSaveButton = false;
+        messageDialogService.ShowBusyButton = !messageDialogService.ShowSaveButton;
+        var response = await accountService.Register(Input);
+        if(response.flag)
+        {
+            messageDialogService.messageDialog!.SetDialogValues("success", response.message);
+            Input = new();
+        }
+        else
+        {
+            messageDialogService.messageDialog!.SetDialogValues("danger", response.message);
+        }
+        messageDialogService.SetMessageDialog();
+    }
+
+    public void Dispose()
+    {
+        messageDialogService.Action -= StateHasChanged;
+    }
+}

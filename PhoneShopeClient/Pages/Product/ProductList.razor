@@ -1,0 +1,79 @@
+﻿@page "/products"
+@page "/products/search/{filter}"
+@implements IDisposable
+
+@if (ProductService.IsVisable)
+{
+    <LoadingComponent />
+}
+else
+{
+    <div class="container-fluid">
+        <AuthorizeView Roles="Admin">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="m-0">Gérer les Produits</h1>
+                <NavLink href="/add-product" class="btn btn-sm btn-primary">+ Ajouter Un Produit</NavLink>
+            </div>
+            <hr />
+        </AuthorizeView> 
+        
+        <div class="row">
+            <div class="col-lg-2">
+                <ManageCategory CategoryClickedEvent="CatogryClickedEvent" DefaultCatogryClickedEvent="DefaultCatogryClickedEvent" />
+            </div>
+            <div class="col-lg-10">
+                <BannerPage />
+                <div class="card border-0">
+                    <div class="card-header border-success-subtle mb-2"></div>
+                    <ProductListComponent AllProducts="productsMatchList?? ProductService.ProductsByCategory?? ProductService.AllProducts" />
+                </div>
+            </div>
+            <div class="col mt-2">
+                <div class="card border-0" style="position:absolute;left:1px;right:1px;">
+                    <div class="card-header border-success-subtle mb-2">Produits Recommandés</div>
+                    <RecommendedProduct />                   
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+
+@code {
+    [Parameter] public string filter { get; set; } = string.Empty;
+    List<Product> productsMatchList { get; set; } = null;
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+        ProductService.ProductAction += StateHasChanged;
+    }
+    protected override void OnParametersSet()
+    {
+
+        if (!string.IsNullOrEmpty(filter) || !string.IsNullOrWhiteSpace(filter))
+        {
+            productsMatchList = ProductService.AllProducts.Where(_ => _.Name!.Contains(filter, StringComparison.OrdinalIgnoreCase)).ToList();
+        }
+    }
+    private async void CatogryClickedEvent(int categoryId)
+    {
+        productsMatchList = null;
+        if (categoryId == 0) return;
+        await ProductService.GetProductsByCategoryId(categoryId);
+    }
+    async Task DefaultCatogryClickedEvent()
+    {
+        ProductService.ProductsByCategory = null;
+        productsMatchList = null;
+        await  LoadData();
+    }
+    async Task LoadData()
+    {
+        bool featured = false;
+        await ProductService.GetAllProducts(featured);
+    }
+    public void Dispose()
+    {
+        ProductService.ProductAction -= StateHasChanged;
+    }
+}

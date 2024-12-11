@@ -1,0 +1,41 @@
+﻿
+@font-face {
+    font-family: 'MyFont';
+    src: url('../font/Savez.ttf') /* https://www.dafont.com/savez.font */
+}
+#topBar { 
+    font-family: MyFont;
+    text-align:center;
+}
+
+.navbar-collapse {
+   
+    color: #FFFFFF;
+}
+.navbar {
+    background-color: #0F172B;
+    color: #FFFFFF;
+}
+.navbar-nav .nav-item .nav-link {
+    /* font-family: 'Roboto', sans-serif; Change to your preferred font family */
+    font-size: 1.1rem; /* Adjust the font size */
+    font-weight: 500; /* Adjust the font weight */
+    color: #FFFFFF; /* Customize the text color */
+    padding: 0.5rem 1rem; /* Adjust padding for better spacing */
+    transition: color 0.3s ease; /* Smooth transition for color changes */
+}
+
+    /* Hover effect for nav links */
+    .navbar-nav .nav-item .nav-link:hover,
+    .navbar-nav .nav-item .nav-link.active {
+        color: #FEA116; /* Change to your preferred hover color */
+    }
+
+.btn-search {
+  
+    color: #ffffff;
+}
+
+    .btn-search:hover {
+        color: #FEA116;
+    }

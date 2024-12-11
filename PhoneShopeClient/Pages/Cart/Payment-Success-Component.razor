@@ -1,0 +1,127 @@
+﻿@page "/paymment-success"
+
+@using Stripe.Checkout
+@using PhoneShopeClient.Models
+@using PhoneShopSharedLibrary.Responses
+@using Microsoft.AspNetCore.WebUtilities
+
+
+@implements IDisposable
+
+
+
+<div class="card">
+    <div style="border-radius:200px; height:200px; width:200px; background: #F8FAF5; margin:0 auto;">
+        <i class="checkmark">✓</i>
+    </div>
+    <h1>Succès</h1>
+    <p> Un grand merci d'avoir choisi nos services; <br />votre satisfaction est notre priorité.</p>
+</div>
+
+
+<MessageDialog @ref="messageDialogService.messageDialog" />
+
+
+
+@code {
+    [Parameter]
+    public string SessionId { get; set; }
+
+    private Session session;
+
+    List<CartItem> myCartOrders = new();
+    private string ipAddress;
+    private string userEmail;
+
+    string userMail = string.Empty;
+
+    protected async override Task OnInitializedAsync()
+    {
+
+        try
+        {
+            var uri = navigationManager.ToAbsoluteUri(navigationManager.Uri);
+            var query = QueryHelpers.ParseQuery(uri.Query);
+            if (query.TryGetValue("session_id", out var sessionIdValue))
+            {
+                SessionId = sessionIdValue!; 
+                session = await orderService.UpdateOrderPaymentStatusAsync(SessionId);               
+            }
+
+           
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error retrieving session details: {ex.Message}");
+        }
+        myCartOrders = await cartService.MyCartOrders();
+        messageDialogService.Action += StateHasChanged;
+
+
+        await cartService.VideCart(myCartOrders);
+
+        StateHasChanged();
+        navigationManager.NavigateTo("/");
+        ;
+    }
+
+
+    public async Task<string> GetIpAddress()
+    {
+        try
+        {
+            ipAddress = await js.InvokeAsync<string>("getClientIp")
+                .ConfigureAwait(true);
+            return ipAddress;
+        }
+        catch (Exception e)
+        {
+            //If the request was blocked.
+            return string.Empty;
+        }
+    }
+    public void Dispose()
+    {
+        messageDialogService.Action -= StateHasChanged;
+
+    }
+}
+
+<style>
+    body {
+        text-align: center;
+        padding: 40px 0;
+    }
+
+    h1 {
+        color: #88B04B;
+        font-family: "Nunito Sans", "Helvetica Neue", sans-serif;
+        font-weight: 900;
+        font-size: 40px;
+        margin-bottom: 10px;
+    }
+
+    p {
+        color: #404F5E;
+        font-family: "Nunito Sans", "Helvetica Neue", sans-serif;
+        font-size: 20px;
+        margin: 0;
+    }
+
+    i {
+        color: #9ABC66;
+        font-size: 100px;
+        line-height: 200px;
+        margin-left: -15px;
+    }
+
+    .card {
+        background: white;
+        padding: 60px;
+        border-radius: 4px;
+        box-shadow: 0 2px 3px #C8D0D8;
+        display: inline-block;
+        margin: 0 auto;
+    }
+</style>
+

@@ -1,0 +1,18 @@
+﻿@page "/add-product"
+
+
+
+<PageTitle>Add Product</PageTitle>
+<AuthorizeView Roles="Admin">
+    <Authorized>
+      
+            <AddOrUpdateProduct/>
+       
+    </Authorized>
+    <NotAuthorized>
+        <h1>Accès refusé </h1>
+    </NotAuthorized>
+</AuthorizeView>
+@code {
+
+}

@@ -1,0 +1,95 @@
+﻿@page "/account/login"
+
+@implements IDisposable
+
+
+
+
+
+@inject NavigationManager navigationManager
+
+
+<div class="container">
+    <div class="row d-flex justify-content-md-center">
+    <div class="col-lg-6">
+      
+            <EditForm Model="Input" method="post" Enhance OnValidSubmit="LoginUser" FormName="login">
+                <DataAnnotationsValidator />               
+                <ValidationSummary class="text-danger" role="alert" />
+                 <div class="card">
+                    <div class="card-header"> Connexion </div>
+                    <div class="card-body">
+                        <div class="form-floating mb-3">
+                            <InputText @bind-Value="Input.Email" class="form-control" autocomplete="Email" aria-required="true" placeholder="E-mail" />
+                            <label for="Email" class="form-label">E-mail</label>
+                            <ValidationMessage For="() => Input.Email" class="text-danger" />
+                        </div>
+                        <div class="form-floating mb-3">
+                            <InputText type="password" @bind-Value="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="Mot de passe" />
+                            <label for="password" class="form-label">Mot de passe</label>
+                            <ValidationMessage For="() => Input.Password" class="text-danger" />
+                        </div>
+                        <div>
+                            
+                        </div>
+                        <div class="from-group mt-3">
+                            @if (messageDialogService.ShowSaveButton)
+                            {
+                                <button type="submit" class="w-100 btn btn-lg btn-primary">Se connecter</button>
+                            }
+                            <BusyButtonComponent ShowBusyButton="messageDialogService.ShowBusyButton" />
+                        </div>
+                    </div>
+                 </div>
+             
+                
+            </EditForm>
+      
+    </div>
+
+</div>
+
+</div>
+<MessageDialog @ref="messageDialogService.messageDialog" />
+@code {
+
+
+    private LoginDTO Input { get; set; } = new();
+    protected override void OnInitialized()
+    {
+        messageDialogService.ShowSaveButton = true;
+        messageDialogService.Action += StateHasChanged;
+    }
+    public async Task LoginUser()
+    {
+
+        var res = await accountService.Login(Input);
+        messageDialogService.ShowSaveButton = false;
+        messageDialogService.ShowBusyButton = !messageDialogService.ShowSaveButton;
+
+        if (res.flag)
+        {
+            var authStateProvider = (CustomAuthenticationStateProvider)AuthStateProvider;
+            await authStateProvider.UpdateAuthenticationState(new TokenProp()
+            {
+                Token= res.Token,
+                RefreshToken  = res.RefreshToken
+                });
+            navigationManager.NavigateTo("/", forceLoad: true);
+        }
+        else
+        {
+            messageDialogService.messageDialog!.SetDialogValues("danger", "Vous avez saisi un nom d’utilisateur ou un mot de passe incorrect.");
+            messageDialogService.SetMessageDialog();
+            messageDialogService.ShowSaveButton = false;
+            messageDialogService.ShowBusyButton = !messageDialogService.ShowSaveButton;
+        }
+       
+
+
+    }
+    public void Dispose()
+    {
+        messageDialogService.Action -= StateHasChanged;
+    }
+}

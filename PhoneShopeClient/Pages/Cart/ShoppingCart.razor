@@ -1,0 +1,238 @@
+﻿@page "/shopping-cart/my-cart"
+@using PhoneShopeClient.Models
+@using PhoneShopSharedLibrary.Responses
+@using PhoneShopeClient.Pages.Components
+
+
+@implements IDisposable
+
+@if (cartService.IsCartLoaderVisible)
+{
+    <LoadingComponent />
+}
+else
+{
+
+    <!-- Cart Start -->
+    <div class="cart-page">
+        <div class="container-fluid">
+            <div class="row d-flex justify-content-md-center">
+
+                <div class="col-lg-3">
+                    <div class="cart-page-inner">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="coupon">
+                                    <input type="text" placeholder="Coupon Code">
+                                    <button>Apply Code</button>
+                                </div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="cart-summary">
+                                    <div class="cart-content">
+                                        <h1>Résumé du Panier</h1>
+                                        <p>Total Partiel<span>@myCartOrders.Sum(O => O.Total).ToString("C", CultureInfo.CreateSpecificCulture("fr-FR"))</span></p>
+                                        <p>Frais de Portt<span>€10</span></p>
+                                        <h2>Grand Total<span>@((myCartOrders.Sum(O => O.Total) + 10).ToString("C", CultureInfo.CreateSpecificCulture("fr-FR")))</span></h2>
+                                    </div>
+                                    <div class="cart-btn">                                       
+                                        <button @onclick="Checkout">Checkout </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @if (myCartOrders is not null)
+                {
+                    var listData = myCartOrders.Skip(skipValue).Take(TakeValue).ToList();
+                    int count = 10;
+                    <div class="col-lg-7">
+                        <div class="cart-page-inner">
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <thead class="thead-dark">
+                                        <tr>
+                                            <th>Produit</th>
+                                            <th>Prix</th>
+                                            <th>Quantité</th>
+                                            <th>Total</th>
+                                            <th>Supprimer</th>
+                                        </tr>
+                                    </thead>
+                                    @foreach (var item in listData)
+                                    {
+                                    <tbody class="align-middle">
+                                        <tr>
+                                            <td>
+                                                <div class="img">                                                    
+                                                    <a href="#"><img src="@item.Image" alt="Image"></a>
+                                                    <p>@item.Name</p>
+                                                </div>
+                                            </td>
+                                            <td>@item.Price.ToString("C",CultureInfo.CreateSpecificCulture("fr-FR"))</td>
+                                            <td>
+                                                <div class="qty">
+                                                    <button class="btn-minus" @onclick="()=>DecreaseQuantity(item)"><i class="fa fa-minus"></i></button>
+                                                    <input type="text"value="@item.Quantity" readonly>
+                                                    <button class="btn-plus"  @onclick="() => IncreaseQuantity(item)"><i class="fa fa-plus"></i></button>
+                                                </div>
+                                            </td>
+                                            <td>@((item.Price * item.Quantity).ToString("C",CultureInfo.CreateSpecificCulture("fr-FR")))</td>
+                                            <td><button @onclick="() => RemoveItem(item)"><i class="fa fa-trash"></i></button></td>
+                                        </tr>
+
+                                    </tbody>
+                                    }
+
+                                </table>
+                                
+                            </div>
+                        </div>
+
+                        <!-- Pagination -->
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination justify-content-center">
+                                @{
+                                    var maxPage = (int)Math.Ceiling((double)myCartOrders.Count / TakeValue);
+
+                                    @for (int i = 1; i <= maxPage; i++)
+                                    {
+                                        int pageIndex = i;
+                                        <li class="page-item @(pageIndex == currentPage ? "active" : "")">
+                                            <button class="page-link" @onclick="() => ChangePage(pageIndex)">@pageIndex</button>
+                                        </li>
+                                    }
+                                }
+                            </ul>
+                        </nav>
+                    </div>
+                }
+
+                <!--here-->
+            </div>
+        </div>
+    </div>
+   
+}
+<MessageDialog @ref="messageDialogService.messageDialog" />
+@code {
+    List<CartItem> myCartOrders = new();
+    private string ipAddress;
+    private int skipValue;
+    private int TakeValue = 6;
+    private int currentPage = 1;
+
+    protected async override Task OnInitializedAsync()
+    {
+        myCartOrders = await cartService.MyCartOrders();
+        messageDialogService.Action += StateHasChanged;
+    }
+    private async Task IncreaseQuantity(CartItem item)
+    {
+        try
+        {
+            item.Quantity++;
+
+
+            displyResponse(await cartService.AddToCart(new Product() { Id = item.Id }, 1));
+            StateHasChanged();
+        }
+        catch (Exception)
+        {
+
+            throw;
+        }
+
+    }
+
+    private async Task DecreaseQuantity(CartItem item)
+    {
+        if (item.Quantity > 1)
+        {
+            item.Quantity--;
+            var orderProduct = myCartOrders.FirstOrDefault(_ => _.Id == item.Id);
+            orderProduct!.Quantity = item.Quantity; 
+            displyResponse(await cartService.AddToCart(new Product() { Id = item.Id }, -1));
+
+        }
+
+        StateHasChanged();
+    }
+    private async Task RemoveItem(CartItem item)
+    {
+        var confirm = await js.InvokeAsync<bool>("confirm", "Êtes-vous sûr de vouloir le supprimer du panier?");
+        if (!confirm) return;
+        myCartOrders.Remove(item);
+        displyResponse(await cartService.DeleteCart(item));
+        StateHasChanged();
+    }
+    private async void displyResponse (ServiceResponse serviceResponse)
+    {
+        if (serviceResponse.flag)
+            messageDialogService.messageDialog!.SetDialogValues("success", serviceResponse.message);
+        else 
+            messageDialogService.messageDialog!.SetDialogValues("danger", serviceResponse.message);
+        messageDialogService.SetMessageDialog();
+
+    }
+    private void ChangePage(int pageNumber)
+    {
+        currentPage = pageNumber;
+        skipValue = (pageNumber - 1) * TakeValue;
+        StateHasChanged(); 
+    }
+
+    private async Task  Checkout()
+    {
+
+        string userMail;
+        var baseUrl = navigationManager.BaseUri.TrimEnd('/');
+        if (myCartOrders is null)
+        {
+            messageDialogService.messageDialog!.SetDialogValues("danger", "Désolé, veuillez d'abord ajouter des articles au panier");
+            messageDialogService.SetMessageDialog();
+        }
+
+        var res = await accountService.GetUserInfo();
+        if (res is null || string.IsNullOrEmpty(res.Email))
+        {
+
+            messageDialogService.messageDialog!.SetDialogValues("danger", "Désolé, veuillez d'abord conecté");
+            messageDialogService.SetMessageDialog();
+
+
+        }
+
+        else
+        {
+            userMail = res!.Email;
+            ipAddress = await GetIpAddress();
+          
+            var id = await orderService.AddOrder(myCartOrders!, userMail, ipAddress);
+
+            var paymentUrl = await orderService.OrderPayment(myCartOrders!, id, baseUrl);
+          
+            navigationManager.NavigateTo(paymentUrl);
+        }
+    }
+    public async Task<string> GetIpAddress()
+    {
+        try
+        {
+            ipAddress = await js.InvokeAsync<string>("getClientIp")
+                .ConfigureAwait(true);
+            return ipAddress;
+        }
+        catch (Exception e)
+        {
+            //If the request was blocked.
+            return string.Empty;
+        }
+    }
+    public void Dispose()
+    {
+        messageDialogService.Action -= StateHasChanged;
+       
+    }
+}

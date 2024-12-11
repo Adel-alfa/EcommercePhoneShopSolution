@@ -1,0 +1,65 @@
+﻿
+
+@implements IDisposable
+
+@if(CategoryService.AllCategories is not null)
+{
+    <div class="card sticky-top" style=" font-family:Tahoma; max-height:100%; ">
+
+        <div class="card-header">Catégorie de Produit</div>
+        <div class="card-body">
+            <div class="list-group">
+                <button type="button" @onclick="@DefaultCatogryClicked" class="list-group-item list-group-item-action @(CategoryId ==0?"activ":"")">
+                    <i class="fa fa-object-group"></i> All
+                </button>
+                @foreach (var item in CategoryService.AllCategories)
+                {
+                    var category = item;
+                    <button type="button" @onclick="()=>catogryclicked(category.Id)" class="list-group-item list-group-item-action mt-3 fw-bold @(category.Id == CategoryId? "activ" : "")">
+                        @category.Name!.ToUpper()
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+}
+@code {
+    [Parameter] public EventCallback DefaultCatogryClickedEvent { get; set; }
+    [Parameter] public EventCallback<int> CategoryClickedEvent { get; set; }
+    public int CategoryId { get; set; }=0;
+    protected override async Task OnInitializedAsync()
+    {
+        await CategoryService.GetAllCategories();
+        CategoryService.CategoryAction += StateHasChanged;
+    }
+    private async Task catogryclicked(int categoryId)
+    {
+        CategoryId = categoryId;
+        await CategoryClickedEvent.InvokeAsync(categoryId);
+    }
+    public async void DefaultCatogryClicked()
+    {
+        CategoryId = 0;
+        await DefaultCatogryClickedEvent.InvokeAsync();
+    }
+    public void Dispose()
+    {
+        CategoryService.CategoryAction -= StateHasChanged;       
+    }
+}
+
+<style>
+    .card {
+        color: #FEA116;
+        
+    }
+     .card .card-header {
+        height: 60px;
+        text-align: center;
+        padding: 10px;
+        font-size: 26px;
+        font-family: Impact;
+        color: #8a4200; 
+        
+    }
+</style>

@@ -1,0 +1,52 @@
+﻿@page "/orders"
+
+@implements IDisposable
+
+@if (orderService.IsOrderVisable || orderlist is null)
+{
+    <LoadingComponent />
+}
+else
+{
+    <div class="container">
+        <div class="d-flex justify-content-between  align-items-center">
+            <h3>@MyOrders</h3>
+        </div>
+        <hr />
+        <OrderListComponent AllOrders="orderlist" />
+
+    </div>
+}
+
+
+@code {
+    string MyOrders = "Liste des Commandes";
+    List<Order> orderlist { get; set; } = null;
+    protected async override Task OnInitializedAsync()
+    {
+        var res = await accountService.GetUserInfo();
+        await orderService.GetAllOrders(res.Role!, res.Email);
+        await LoadData(res.Role);
+        orderService.OrderAction += StateHasChanged;
+    }
+
+
+    async Task LoadData(string role)
+    {
+
+        if (role == "User")
+        {
+            MyOrders = "Mes Commandes";
+            orderlist = orderService.UserAllOrders;
+        }
+       
+        else
+        {
+            orderlist = orderService.AllOrders;
+        }
+    }
+    public void Dispose()
+    {
+        ProductService.ProductAction -= StateHasChanged;
+    }
+}

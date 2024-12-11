@@ -1,0 +1,94 @@
+﻿@page "/add-category"
+@implements IDisposable
+
+<div class="container mt-5">
+    <div class="row d-flex justify-content-md-center">
+        <div class="col-lg-6">
+            <EditForm Model="Model" Enhance OnValidSubmit="SaveCategoryAsync" FormName="Category">
+                <DataAnnotationsValidator />
+                <ValidationSummary/>
+                <div class="card">
+                    <div class="card-header"> Ajouter une Catégorie </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label class="form-label">nom de Catégorie  </label>
+                            <InputText @bind-Value="Model.Name" class="form-control"></InputText>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="form-group mt-3">
+                            @if (messageDialogService.ShowSaveButton)
+                            {
+                                <button type="submit" class="My-button-outline"><i class="fa fa-plus"></i> Sauvegarder </button>
+                            }
+                            <BusyButtonComponent ShowBusyButton="messageDialogService.ShowBusyButton"></BusyButtonComponent>
+                        </div>
+                    </div>
+                </div>
+            </EditForm>
+        </div>
+    </div>      
+
+</div>
+<MessageDialog @ref=" messageDialogService.messageDialog"></MessageDialog>
+@code {
+    Category Model = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        messageDialogService.ShowSaveButton = true;
+        messageDialogService.Action += StateHasChanged;
+    }
+    private async Task SaveCategoryAsync()
+    {
+        messageDialogService.ShowSaveButton = false;
+        messageDialogService.ShowBusyButton = !messageDialogService.ShowSaveButton;
+        var (flag, message) = await CategoryService.AddCategory(Model);
+        if (flag)
+            messageDialogService.messageDialog!.SetDialogValues("success", message);
+        else
+            messageDialogService.messageDialog!.SetDialogValues("danger", message);
+
+        messageDialogService.SetMessageDialog();
+        return;
+
+    }
+    public void Dispose()
+    {
+        messageDialogService.Action -= StateHasChanged;
+        messageDialogService.ShowSaveButton = true;
+    }
+}
+<style>
+    .card {
+        position: relative;
+        border: 2px solid #d68b00;
+    }
+
+        .card .card-header, .card .card-footer {
+            font-family: 'Source Code Pro', monospace;
+            font-size: 18px;
+            font-weight: 700;
+            color: #353535;
+            text-align: center;
+            border-bottom: 2px solid #d68b00;
+            background-color: #ffdfa4;
+        }
+
+    .My-button-outline {
+        display: inline-block;
+        height: 37px;
+        padding: 6px 15px;
+        color: #8a4200;
+        background: #ffffff;
+        border: 1px solid #8a4200;
+        border-radius: 4px;
+        transition: all .3s;
+    }
+
+        .My-button-outline:hover {
+            color: #ffffff;
+            background: #8a4200;
+        }
+
+</style>

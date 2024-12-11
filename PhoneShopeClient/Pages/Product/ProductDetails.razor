@@ -1,0 +1,212 @@
+﻿
+@page "/products/product-details/{Id:int}"
+
+@using System.ComponentModel.DataAnnotations
+@inject NavigationManager NavManager
+
+
+<div class="product-detail">
+    <div class="container-fluid">
+        <div class="row d-flex justify-content-md-center">
+            <div class="col-lg-8">
+                <div class="product-detail-top">
+                    <div class="row align-items-center">
+                        <div class="col-md-4 " width="140" height="260">
+
+                            <img src="@product.Base64Img" alt="Product Image">
+
+
+                        </div>
+                        <div class="col-md-8">
+                            <div class="product-content">
+                                <div class="name"><h2>@product.Name</h2></div>
+                                <div class="ratting">
+                                    <i class="fa fa-star"></i>
+                                    <i class="fa fa-star"></i>
+                                    <i class="fa fa-star"></i>
+                                    <i class="fa fa-star"></i>
+                                    <i class="fa fa-star"></i>
+                                </div>
+                               
+                                <div class="detail">
+                                    <h4>Prix:</h4>
+                                    <p>@product.Price.ToString("C", CultureInfo.CreateSpecificCulture("fr-FR")) <span>@((product.Price + 100).ToString("C", CultureInfo.CreateSpecificCulture("fr-FR")))</span></p>
+                                </div>
+                                <div class="detail">
+                                    <h4>Quantité:</h4>
+                                    <p>@product.Quantity</p>
+                                </div>                                
+                                <div class="action">
+                                    <a class="My-button fw-bold" href="/"><i class="fa fa-backward"></i> Retour </a>
+                                    <a class="btn btn-outline-danger fw-bold" @onclick="() =>AddToCart()"><i class="fa fa-shopping-cart"></i>Ajouter au panier</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                
+
+
+                <div class="row product-detail-bottom">
+                    <div class="col-lg-12">
+                        <ul class="nav nav-pills nav-justified">
+                            <li class="nav-item">
+                                <a class='nav-link @(activeTab == "description" ? "active" : "")' data-toggle="pill" @onclick='()=>SetActiveTab("description")'>Description</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class='nav-link @(activeTab == "specification" ? "active" : "")' data-toggle="pill" @onclick='()=>SetActiveTab("specification")'>Spécification</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class='nav-link @(activeTab == "reviews" ? "active" : "")' data-toggle="pill" @onclick='()=>SetActiveTab("reviews")'>Commentaires (1)</a>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content">
+                            <div id="reviews" class='container tab-pane  @(activeTab == "reviews" ? "active" : "fade")'>
+                                <div class="reviews-submitted">
+                                    <div class="reviewer">Phasellus Gravida - <span>01 Jan 2024</span></div>
+                                    <div class="ratting">
+                                        <i class="fa fa-star"></i>
+                                        <i class="fa fa-star"></i>
+                                        <i class="fa fa-star"></i>
+                                        <i class="fa fa-star"></i>
+                                        <i class="fa fa-star"></i>
+                                    </div>
+                                    <p>
+                                        Lorem ipsum odor amet, consectetuer adipiscing elit. Aliquam senectus fringilla sociosqu mi venenatis pellentesque augue.
+                                    </p>
+                                </div>
+                                <div class="reviews-submit">
+                                    <h4>Laisser un commentaire:</h4>
+                                    <div class="ratting">
+                                        <i class="far fa-star"></i>
+                                        <i class="far fa-star"></i>
+                                        <i class="far fa-star"></i>
+                                        <i class="far fa-star"></i>
+                                        <i class="far fa-star"></i>
+                                    </div>
+                                    <div class="row form">
+                                        <div class="col-sm-6">
+                                            <input type="text" placeholder="Nom">
+                                        </div>
+                                        <div class="col-sm-6">
+                                            <input type="email" placeholder="E-mail">
+                                        </div>
+                                        <div class="col-sm-12">
+                                            <textarea placeholder="Commentaire..."></textarea>
+                                        </div>
+                                        <div class="col-sm-12">
+                                            <button class="My-button">Commenter</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="description" class='container tab-pane @(activeTab == "description" ? "active" : "fade")'>
+                                <h4>Description du produit</h4>
+                                <p>
+                                    @product.Description
+                                </p>
+                            </div>
+                            <div id="specification" class='container tab-pan  @(activeTab == "specification" ? "active" : "fade")'>
+                                <h4>Spécification du produit</h4>
+                                <ul>
+                                    <li>Lorem ipsum odor amet, consectetuer adipiscing elit.</li>
+                                    <li>Lorem ipsum odor amet, consectetuer adipiscing elit.</li>
+                                    <li>Lorem ipsum odor amet, consectetuer adipiscing elit.</li>
+                                    <li>Lorem ipsum odor amet, consectetuer adipiscing elit.</li>
+                                    <li>Lorem ipsum odor amet, consectetuer adipiscing elit.</li>
+                                </ul>
+                            </div>
+                           
+                        </div>
+                    </div>
+                </div>
+
+
+
+
+            </div>
+
+
+        </div>
+    </div>
+</div>
+<MessageDialog @ref="messageDialogService.messageDialog" />
+
+
+@code {
+    [Parameter] public int Id { get; set; } = 0;
+  
+    private string activeTab ;
+    Product product { get; set; } = new();
+
+   
+    [Range(1, 9)]
+    public int value = 1;
+    protected async override Task OnInitializedAsync()
+    {
+        bool Featured = false;
+        await ProductService.GetAllProducts(Featured);
+        product = ProductService.AllProducts.FirstOrDefault(_ => _.Id == Id)!;
+
+        activeTab = "description";
+        value = 1;
+        ProductService.ProductAction += StateHasChanged;
+        messageDialogService.Action += StateHasChanged;
+    }
+    
+    private void SetActiveTab(string tabName)
+    {
+
+        activeTab = tabName;
+
+        StateHasChanged();
+    }
+    private async Task AddToCart()
+    {
+        try
+        {   
+            var (flag, message) = await cartService.AddToCart(new Product() { Id = Id }, value);
+            if (flag)
+                messageDialogService.messageDialog!.SetDialogValues("success", message);
+            else
+                messageDialogService.messageDialog!.SetDialogValues("danger", message);
+            messageDialogService.SetMessageDialog();
+        
+            navigationManager.NavigateTo($"/shopping-cart/my-cart");
+        }
+        catch (Exception)
+        {
+
+            throw;
+        }
+
+    }
+    private async Task IncreaseQuantity()
+    {
+      
+
+        if(value < 10)
+            value++;
+        else
+             await js.InvokeVoidAsync("alert", "Il n'est pas permis de dépasser dix pièces!");
+        
+    }
+
+    private void DecreaseQuantity()
+    {
+        if (value > 1)
+        {
+            value--;
+            
+        }
+
+      
+    }
+    public void Dispose()
+    {
+        ProductService.ProductAction -= StateHasChanged;
+        messageDialogService.Action -= StateHasChanged;
+    }
+}

@@ -1,0 +1,116 @@
+@implements IDisposable
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" @onclick="GotoShoppingCart" style="cursor:pointer">
+            <i class="fa fa-cart-shopping text-danger"></i>
+            <span class="small text-danger fw-bold">@cartService.CartCount</span>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent" style="margin-left:25vw">
+            <div class="navbar-nav me-auto mb-2 mb-lg-0" style="font-family:MyFont">
+                <dev class="nav-item">
+                    <a class="nav-link active" aria-current="page" href="#">Home</a>
+                </dev>
+                <AuthorizeView Roles="Admin">
+                <dev class="nav-item">
+                    <a class="nav-link d-flex align-items-center" href="add-category">Categorie</a>
+                    
+                </dev>
+                </AuthorizeView>
+                 <AuthorizeView>
+                <dev class="nav-item">
+                    <a class="nav-link d-flex align-items-center" href="/orders">Commande</a>
+                </dev>
+                </AuthorizeView>
+                <dev class="nav-item">
+                    <a class="nav-link d-flex align-items-center" href="/products">Produit</a>
+                </dev>
+                <dev class="nav-item">
+                    <a class="nav-link d-flex align-items-center" href="#">SERVICES</a>
+                </dev>
+                <dev class="nav-item">
+                    <a class="nav-link" href="#">Nous contacter</a>
+                </dev>
+            </div>
+
+            <!-- Login Icon in the Middle -->
+            <div class="d-flex align-items-stretch mx-lg-auto mb-2 mb-lg-0">
+                <AuthorizeView>
+                    <Authorized>
+                        <div class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <img src="/img/avatar-02.jpeg" class="rounded-circle" alt="User Avatar" style="width:30px; height:30px;">
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                                <li class="dropdown-item">@context.User.Identity?.Name</li>
+                                <li><a class="dropdown-item" href="/profile">Profile</a></li>
+                                <li><a class="dropdown-item" href="/notifications">Notification</a></li>
+                                <li><a class="dropdown-item" href="/dialog">Dialog</a></li>
+                                <li><a class="dropdown-item" @onclick="logout">déconnecter</a></li>
+                            </ul>
+                        </div>
+                    </Authorized>
+                    <NotAuthorized>
+                        <div class="nav-item mx-2">
+                            <a class="nav-link" href="/account/login"><span class="bi bi-door-open" aria-hidden="true" style="vertical-align:middle"></span> Connection</a>
+                        </div>
+                        <div class="nav-item mx-2">
+                            <a class="nav-link" href="/account/register"><span class="bi bi-pencil-square" aria-hidden="true" style="vertical-align:middle"></span> Inscription</a>
+                        </div>
+                    </NotAuthorized>
+                </AuthorizeView>
+            </div>
+
+            <!-- Search Component -->
+            <div class="d-flex align-items-center">
+                @if (ShowSearchIcon)
+                {
+                    <button class="btn btn-search" type="button" @onclick="SearchClicked">
+                        <i class="fa fa-magnifying-glass fs-5" style="cursor:pointer"></i>
+                    </button>
+                }
+                @if (ShowSearch)
+                {
+                    <SearchComponent></SearchComponent>
+                }
+            </div>
+        </div>
+    </div>
+</nav>
+
+@code {
+
+    public bool ShowSearch { get; set; }
+    public bool ShowSearchIcon { get; set; } = true;
+    protected async override Task OnInitializedAsync()
+    {
+        await cartService.GetCartCount();
+        cartService.CartAction += StateHasChanged;
+    }
+    void SearchClicked()
+    {
+        ShowSearch = true;
+        ShowSearchIcon = !ShowSearch;
+    }
+    void NavigateTo(string url)
+    {
+        navigationManager.NavigateTo($"/account/{url}");
+    }
+    void GotoShoppingCart()
+    {
+        navigationManager.NavigateTo($"/shopping-cart/my-cart");
+    }
+    async void logout()
+    {
+        var logoutModel = new TokenProp();
+        var customAuthenStateProvider = (CustomAuthenticationStateProvider)AuthStateProvider;
+        await customAuthenStateProvider.UpdateAuthenticationState(logoutModel);
+        navigationManager.NavigateTo($"/", forceLoad: true);
+    }
+    public void Dispose()
+    {
+        cartService.CartAction -= StateHasChanged;
+    }
+}

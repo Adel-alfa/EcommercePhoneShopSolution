@@ -1,0 +1,217 @@
+﻿@using PhoneShopeClient.Services
+@implements IDisposable
+
+
+<div class="container mt-5">
+    <div class="d-flex  align-items-center">
+        <h2>
+            <NavLink href="/products" class="me-2 btn btn-sm btn-default">
+                <i class="fa fa-arrow-left"></i>
+            </NavLink>
+            Ajouter un produit.
+        </h2>
+
+    </div>
+    <hr />
+    <div class="row d-flex justify-content-md-center">
+        <div class="col-lg-6">
+            <EditForm Model="MyProduct" Enhance OnValidSubmit="HandleSaveProduct">
+                 <DataAnnotationsValidator />
+                 <ValidationSummary />
+                 <div class="card">
+                     <div class="card-header">Ajouter un produit </div>
+                     <div class="card-body">
+                         <div class="form-group">
+                             <label class="form-label">Nom du produit</label>
+                             <InputText @bind-Value="MyProduct.Name" class="form-control"></InputText>
+                         </div>
+                        <div class="form-group mt-3">
+                            <label class="form-label"> choisir une Catégorie</label>
+                            @if(CategoryService.AllCategories is not null)
+                            {
+                                <InputSelect @bind-Value="MyProduct.CategoryId" class="form-control-sm">
+                                    <option selected>Select Category</option>
+                                    @foreach (var category in CategoryService.AllCategories)
+                                    {
+                                        <option value="@category.Id">@category.Name</option>
+                                    }
+                                </InputSelect>
+                            }
+                            
+                        </div>
+                         <div class="form-group mt-3">
+                             <label class="form-label">Prix</label>
+                             <InputNumber @bind-Value="MyProduct.Price" class="form-control"></InputNumber>
+                         </div>
+                         <div class="form-group mt-3">
+                             <label class="form-label">Quantité</label>
+                             <InputNumber @bind-Value="MyProduct.Quantity" class="form-control"></InputNumber>
+                         </div>
+                         <div class="form-group mt-3">
+                             <label class="form-label">Description</label>
+                             <InputTextArea @bind-Value="MyProduct.Description" class="form-control"></InputTextArea>
+                         </div>
+                         <div class="form-group mt-3">
+                             <label class="form-label @(ImageUpLoadMessage ==""?"":"text-danger")">
+                                @(ImageUpLoadMessage == "" ? "Télécharger l'Image" : ImageUpLoadMessage)
+                             </label>
+                             <InputFile class="form-control" OnChange="UpLoadImage"></InputFile>
+                         </div>
+                        <div class="form-group mt-3 pt-4">
+                            @if (!string.IsNullOrWhiteSpace(_imageUrl))
+                            {
+                                <label class="form-label">Cliquez pour afficher l'image</label>
+                                <img src="@_imageUrl" @onclick="@ModalShow" class="rounded" alt="Cinque Terre" width="50" height="50" />
+                            }
+                        </div>
+                     </div>
+                     <div class="card-footer">
+                         <div class="form-group mt-3">
+                            @if (messageDialogService.ShowSaveButton)
+                            {
+                                <button type="submit" class="My-button-outline">
+                                    <i class="fa fa-plus"></i>
+                                    Sauvegarder
+                                </button>
+                            }
+                            <BusyButtonComponent ShowBusyButton="messageDialogService.ShowBusyButton"></BusyButtonComponent>
+                        </div>
+                    </div>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+    @if (showModal)
+    {
+        <div class="modal " id="myModal" style="display:block" aria-modal="true" role="dialog">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header justify-content-end">
+                        <button type="button" class="close" @onclick="@ModalCancel">&times;</button>
+                    </div>
+                    <!-- Modal body -->
+                    <div class="modal-body text-center">
+                        <img src="@_imageUrl" class="img-fluid" />
+                    </div>
+
+                    <!-- Modal footer -->
+                    <div class="modal-footer">
+                        @if (messageDialogService.ShowSaveButton)
+                        {
+                            <button type="button" class="btn" @onclick="@ModalCancel">Fermer</button>
+                        }
+                        <BusyButtonComponent ShowBusyButton="messageDialogService.ShowBusyButton"></BusyButtonComponent>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    }
+</div>
+<MessageDialog @ref=" messageDialogService.messageDialog"></MessageDialog>
+
+@code {
+    Product MyProduct = new();
+    string ImageUpLoadMessage = "";
+
+    private string? _imageUrl = null;
+    bool showModal = false;
+    void ModalShow() => showModal = true;
+    void ModalCancel() => showModal = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CategoryService.GetAllCategories();
+        CategoryService.CategoryAction += StateHasChanged;
+        messageDialogService.ShowSaveButton = true;
+        messageDialogService.Action += StateHasChanged;
+    }
+    async Task HandleSaveProduct()
+    {
+       
+        if (string.IsNullOrEmpty(MyProduct.Base64Img))
+        {
+            messageDialogService.messageDialog!.SetDialogValues("Warning", "You need to choose an image");
+            messageDialogService.SetMessageDialog();
+            return;
+        }
+        messageDialogService.ShowSaveButton = false;
+        messageDialogService.ShowBusyButton = !messageDialogService.ShowSaveButton;
+        var (flag, message) = await ProductService.AddProduct(MyProduct);
+        if (flag)
+        {
+            messageDialogService.messageDialog!.SetDialogValues("success", message);
+            messageDialogService.SetMessageDialog();
+            messageDialogService.ShowSaveButton = true;
+            messageDialogService.ShowBusyButton = !messageDialogService.ShowSaveButton;
+            navigationManager.NavigateTo("/products");
+            return;
+        }
+        
+        else
+            messageDialogService.messageDialog!.SetDialogValues("danger", message);
+        messageDialogService.SetMessageDialog();
+        messageDialogService.ShowSaveButton = true;
+        messageDialogService.ShowBusyButton = !messageDialogService.ShowSaveButton;
+        return;
+    }
+    async Task UpLoadImage(InputFileChangeEventArgs e)
+    {
+        if (e.File.Name.ToLower().Contains(".png"))
+        {
+            var format = "image/png";
+            var resizeImage = await e.File.RequestImageFileAsync(format, 300, 300);
+            var buffer = new byte[resizeImage.Size];
+            await resizeImage.OpenReadStream().ReadAsync(buffer);
+            var imageData = $"data:{format};base64,{Convert.ToBase64String(buffer)}";
+            ImageUpLoadMessage = "";
+            MyProduct.Base64Img = imageData;
+            _imageUrl = imageData;
+            imageData = "";
+            return;
+        }
+        ImageUpLoadMessage = "PNG file just allowed!";
+        return;
+    }
+
+    public void Dispose()
+    {
+        CategoryService.CategoryAction -= StateHasChanged;
+        messageDialogService.Action -= StateHasChanged;
+        messageDialogService.ShowSaveButton = true;
+    }
+}
+
+<style>
+    .card {
+        position: relative;
+        border: 2px solid #d68b00;
+    }
+
+        .card .card-header, .card .card-footer {
+            font-family: 'Source Code Pro', monospace;
+            font-size: 18px;
+            font-weight: 700;
+            color: #353535;
+            text-align: center;
+            border-bottom: 2px solid #d68b00;
+            background-color: #ffdfa4;
+        }
+
+    .My-button-outline {
+        display: inline-block;
+        height: 37px;
+        padding: 6px 15px;
+        color: #8a4200;
+        background: #ffffff;
+        border: 1px solid #8a4200;
+        border-radius: 4px;
+        transition: all .3s;
+    }
+
+        .My-button-outline:hover {
+            color: #ffffff;
+            background: #8a4200;
+        }
+
+</style>

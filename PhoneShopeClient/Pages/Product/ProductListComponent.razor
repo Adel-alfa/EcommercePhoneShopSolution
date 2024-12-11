@@ -1,0 +1,107 @@
+﻿
+@if (AllProducts is not null)
+{
+    var listData = AllProducts.Skip(skipValue).Take(TakeValue).ToList();
+    <div class="container-fluid">
+        <div class="row featured__filter">
+            @foreach (var item in listData!.OrderBy(_ => _.Featured))
+            {
+                <div class="col-lg-2 col-md-3 col-sm-6 border-success">
+                    <div class="featured__item" style="width:200px;">
+                        <div class="featured__item__pic set-bg">
+                            <img src="@item.Base64Img" width="150" height="200" />
+                            <ul class="featured__item__pic__hover list-inline">
+                                <li class="list-inline-item"><a href="#"><i class="fa fa-heart text-success"></i></a></li>
+                                <li class="list-inline-item"><a href="/products/product-details/@item.Id"><i class="fa fa-retweet"></i></a></li>
+                                <li class="list-inline-item"><a @onclick="()=>AddToCart(item)" style="cursor:pointer"><i class="fa fa-shopping-cart text-danger"></i></a></li>
+                            </ul>
+                        </div>
+                        <div class="featured__item__text">
+                            <h6 class="text-primary">@item.Name</h6>
+                            <h5 class="text-danger">@item.Price.ToString("C", CultureInfo.CreateSpecificCulture("fr-FR"))</h5>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+        <!-- Pagination -->
+        <nav aria-label="Page navigation example">
+            <ul class="pagination justify-content-center">
+                @{
+                    var maxPage = (int)Math.Ceiling((double)AllProducts.Count / TakeValue);
+
+                    @for (int i = 1; i <= maxPage; i++)
+                    {
+                        int pageIndex = i; 
+                        <li class="page-item @(pageIndex == currentPage ? "active" : "")">
+                            <button class="page-link" @onclick="() => ChangePage(pageIndex)">@pageIndex</button>
+                        </li>
+                    }
+                }
+            </ul>
+        </nav>
+    </div>
+   
+}
+@if (showModal)
+{
+    <div class="modal " id="myModal" style="display:block" aria-modal="true" role="dialog">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header justify-content-center">
+                    Notification!
+                </div>
+                <!-- Modal body -->
+                <div class="modal-body text-center">
+                    <div class="alert alert-@AlertType">@Message</div>
+                </div>
+
+                <!-- Modal footer -->
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-@AlertType float-end" @onclick="@ModalCancel">Fermer</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+}
+@code {
+    [Parameter] public List<Product> AllProducts { get; set; } = new();
+   
+    private int skipValue;
+    private int TakeValue = 6;
+    private int currentPage = 1;
+
+    bool showModal = false;
+    private string AlertType { get; set; } = string.Empty;
+    private string Message { get; set; } = string.Empty;
+
+   
+    private void ChangePage(int pageNumber)
+    {
+        currentPage = pageNumber;
+        skipValue = (pageNumber - 1) * TakeValue;
+        StateHasChanged(); 
+    }
+    private async Task AddToCart(Product model)
+    {
+        model.Quantity = 1;
+        var (flag, message) = await cartService.AddToCart(model);
+        if (flag)
+            ModalShow("success", message);
+        else
+            ModalShow("danger", message);
+    }
+    void ModalShow(string alert, string message)
+    {
+        AlertType = alert;
+        Message = message;
+        showModal = true;
+    }
+    void ModalCancel()
+    {
+        AlertType = string.Empty;
+        Message = string.Empty;
+        showModal = false;
+    }
+}

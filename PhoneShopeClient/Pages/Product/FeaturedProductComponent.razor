@@ -1,0 +1,126 @@
+﻿@implements IDisposable
+
+
+
+
+@if (!ProductService.IsVisable)
+{
+    
+
+    <div class="container-fluid mt-5">
+        <div class="row">
+            <div class="col-md-12 col-sm-12">
+                <hr />
+                <span style="font-family:MyFont">Featured</span>
+
+                <div class="card border-0">
+
+                    <div class="card-body">
+                        <div class="d-flex justify-content-evenly align-items-center">
+                            <img src="../resources/lessthan.png" width="50" height="50" id="styleCursor" @onclick="PreviousButton" />
+                            @if (FeaturedProducts is null) return;
+                            @foreach (var item in FeaturedProducts)
+                            {
+                                <div>
+                                    <div>
+                                        @if (item.DateUpLoad.AddDays(30) > DateTime.Now)
+                                        {
+                                            <span class="badge bg-primary d-flex align-items-lg-end float-end" style="width:50px">New</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-none d-flex align-items-lg-end float-end" style="width:50px; height:50px"></span>
+                                        }
+                                        <img class="card-img-top childImage" src="@item.Base64Img" width="150" height="200" style="max-width:150px;min-width:150px" @onclick="()=>ViewProductDetails(item.Id)" />
+                                        <div id="productCover" class=" text-white d-flex justify-content-center text-wrap"> @item.Name</div>
+                                    </div>
+                                </div>
+                            }
+                            <img src="../resources/greaterthan.png" width="50" height="50" id="styleCursor" @onclick="NextButton" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+
+@code {
+    // List<Product>? ProductList = new();
+    List<Product>? FeaturedProducts = new();
+    public int Skip { get; set; } = 0;
+    public int Take { get; set; } = 6;
+    public int PageSize { get; set; } = 6;
+    protected override async Task OnInitializedAsync()
+    {
+        bool Featured = true;
+        await ProductService.GetAllProducts(Featured);
+        ProductService.ProductAction += StateHasChanged;
+        LoadData();
+    }
+    private async void LoadData()
+    {
+        var getData = await SkipAndTake(Skip,Take);
+        Skip += PageSize;
+        AddToFeaturedProducts(getData);
+    }
+    private async Task<List<Product>> SkipAndTake(int Skip, int Take) => ProductService.FeaturedProducts.Skip(Skip).Take(Take).ToList();
+
+
+
+    private void AddToFeaturedProducts(List<Product> products)
+    {
+        FeaturedProducts?.Clear();
+        FeaturedProducts = products;
+    }
+    async void PreviousButton()
+    {
+        if (Skip == 6) return;
+        var getPreviousProducts = await  SkipAndTake(Skip - (PageSize * 2), Take);
+        Skip -= PageSize;
+        AddToFeaturedProducts(getPreviousProducts);
+    }
+    private async void NextButton()
+    {
+        if (Skip >  ProductService.FeaturedProducts.Count()) return;
+        var getNextProducts = await SkipAndTake(Skip, Take);
+        Skip += PageSize;
+        AddToFeaturedProducts(getNextProducts);        
+    }
+    private void ViewProductDetails(int id)
+    {
+        navigationManager.NavigateTo($"/products/product-details/{id}");
+    }
+    public void Dispose()
+    {
+       ProductService.ProductAction -= StateHasChanged;
+        
+    }
+}
+<style>
+    #styleCursor{
+        cursor: pointer;
+    } 
+    #productCover {
+        width: 150px;
+        font-size: 14px;
+        height: 50px;
+        position:absolute;
+        bottom:10px;
+        border-radius: 10px;
+        padding: 2px;
+        cursor: pointer;        
+        background-color: #d68b00;
+    }
+    #productCover:hover{
+        opacity:1
+    }
+    imb{
+        opacity: 1;
+        cursor: pointer;
+    }
+    .childImage:hover{
+        opacity: 0.5;
+    }
+</style>

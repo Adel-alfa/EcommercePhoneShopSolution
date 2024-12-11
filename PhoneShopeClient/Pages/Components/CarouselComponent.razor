@@ -1,0 +1,138 @@
+﻿@using Microsoft.JSInterop
+@implements IDisposable
+
+
+
+@if (ProductService.IsVisable)
+{
+    <LoadingComponent />
+}
+else
+{
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                @if (ProductService.FeaturedProducts is not null)
+                {
+                    <div id="productCarousel" class="carousel slide" data-bs-ride="carousel">
+                        <!-- Carousel Indicators -->
+                        <div class="carousel-indicators">
+                           
+                            @for (int i = 0; i < ProductLists.Count; i++)
+                            {
+                                <button type="button" data-bs-target="#productCarousel" data-bs-slide-to="@i" class="@(i == 0 ? "active" : "")" aria-current="@(i == 0 ? "true" : "false")" aria-label="Slide @(i + 1)"></button>
+                            }
+                        </div>
+                        <!-- Carousel Items -->
+                        <div class="carousel-inner">
+                            @foreach (var product in ProductLists)
+                            {
+                                <div class="carousel-item @(product.Id == defaultItemId ? "active" : "")">
+                                    <div class="row justify-content-center">
+                                        <div class="col-md-3">
+                                            <img src="@product.Base64Img" width="250" height="380" alt="@product.Name">
+                                        </div>
+                                        <div class="col-md-1"></div>
+
+                                        <div class="col-md-6 d-flex align-items-center">
+                                            <div>
+                                                <div>
+                                                    <p>
+                                                        <span style="font-family:Impact; text-indent:2px; cursor:pointer;" class="text-dark fw-bold display-2" @onclick="()=>ViewProductDetails(product.Id)">
+                                                            @product.Name
+                                                            <sup style="font-family:'Courier New'">
+                                                                <span class="badge rounded-pill bg-primary fs-6">@(GetNewLabel(product.DateUpLoad))</span>
+
+                                                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger fs-5">
+                                                                    @((product.Quantity - 1) > 0 ? $"{product.Quantity - 1}+" : product.Quantity)
+
+                                                                </span>
+                                                            </sup>
+                                                        </span>
+                                                    </p>
+                                                </div>
+
+                                                <p class="text-muted fs-5">@(General.GetDescription(product.Description!))</p>
+                                                <h5 class="text-danger float-end">@product.Price.ToString("C", CultureInfo.CreateSpecificCulture("fr-FR"))</h5>
+                                                <div class="d-flex justify-content-center">                                                   
+                                                    <a href="/products/product-details/@product.Id" class="btn btn-My fw-bold me-2"><i class="fa fa-list"></i> Détails</a>
+                                                    <button class="btn btn-outline-danger fw-bold" @onclick="()=>AddToCart(product)"><i class="fa fa-cart-plus"></i>ACHETER </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-1">
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        <button class="carousel-control-prev" type="button" data-bs-target="#productCarousel" data-bs-slide="prev">
+                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Previous</span>
+                        </button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#productCarousel" data-bs-slide="next">
+                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Next</span>
+                        </button>
+                     </div>
+                    
+                }else
+                {
+                    <div class="alert alert-info">No product available</div>
+                }
+            </div>
+        </div>
+    </div>
+ 
+
+}
+<MessageDialog @ref="messageDialogService.messageDialog" />
+
+@code {
+    [Parameter] public List<Product> ProductLists { get; set; }
+    [Parameter] public int? defaultItemId { set; get; }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+
+        if (firstRender)
+        {
+            await js.InvokeVoidAsync("startCarousels");
+        }
+        
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        if (defaultItemId is null)
+        {
+            defaultItemId = ProductLists.First().Id;
+        }
+        messageDialogService.Action += StateHasChanged;
+    }
+   
+    string GetNewLabel(DateTime dateUpLoad)
+    {
+        int maxDays = 30;
+        int productDateAfterUpLoaded = (DateTime.Now - dateUpLoad).Days;
+        return productDateAfterUpLoaded <= maxDays ? "New" : null!;
+    }
+    private async Task AddToCart(Product model)
+    {
+        model.Quantity = 1;
+        var (flag, message) = await cartService.AddToCart(model);
+        if (flag)
+            messageDialogService.messageDialog!.SetDialogValues("success", message);
+        else
+            messageDialogService.messageDialog!.SetDialogValues("danger", message);
+        messageDialogService.SetMessageDialog();
+    }
+    private void ViewProductDetails(int id)
+    {
+        navigationManager.NavigateTo($"/products/product-details/{id}");
+    }
+    public void Dispose()
+    {
+        ProductService.ProductAction -= StateHasChanged;
+        messageDialogService.Action -= StateHasChanged;
+    }
+}

@@ -1,0 +1,152 @@
+﻿@page "/order-details"
+
+@page "/order-details/{id:int}"
+
+<h3>Order Details</h3>
+
+
+@if (model is null)
+{
+    <LoadingComponent />
+}
+else
+{
+    <div class="cart-page">
+        <div class="container-fluid">
+            <div class="row d-flex justify-content-md-center">
+                @if (model is not null)
+                {               
+                    <div class="col-lg-7">
+                        
+                        <div class="cart-page-inner">
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <thead class="thead-dark">
+                                        <tr>
+                                            <th>Produit</th>
+                                            <th>Prix</th>
+                                            <th>Quantité</th>
+                                            <th>Total</th>                                           
+                                        </tr>
+                                    </thead>
+                                    @foreach (var item in model)
+                                    {
+                                        <tbody class="align-middle">
+                                            <tr>
+                                                <td>
+                                                    <div class="img">
+                                                        <a href="/products/product-details/@item.product!.Id"><img src="@item.product.Base64Img" alt="Image"></a>
+                                                        <p>@item.product.Name</p>
+                                                    </div>
+                                                </td>
+                                                <td>@item.UnitPrice.ToString("C", CultureInfo.CreateSpecificCulture("fr-FR"))</td>
+                                                <td>@item.Quantity </td>
+
+                                                <td>@item.TotalPrice.ToString("C", CultureInfo.CreateSpecificCulture("fr-FR"))</td>
+                                                
+                                            </tr>
+
+                                        </tbody>
+                                    }
+
+                                </table>
+
+                            </div>
+                        </div>
+
+                        <div class="row">
+
+                            <div class="col-md-3 offset-md-9">
+                                <p class="fw-bold">Grand Total: <span class="text-danger fs-4">@(model.Sum(O => O.TotalPrice).ToString("C", CultureInfo.CreateSpecificCulture("fr-FR")))</span> </p>
+                            </div>
+                        </div>
+
+                    </div>
+                }
+
+                
+            </div>
+        </div>
+</div>
+
+}
+
+
+@code {
+    [Parameter]
+    public int? id { get; set; }
+    private string? Message = null;
+    List<OrderDetailsModel> model = null;
+  
+    protected override async Task OnInitializedAsync()
+    {
+       
+        if(id  is not null)
+        {
+          
+            model = await orderService.GetOrder(id.Value)!;
+            
+        }
+        
+        if (model is null)
+        {
+            Message = "Cette commande n'existe pas!";
+            return;
+        }
+        
+    }
+}
+<style>
+    .cart-page {
+        position: relative;
+        margin-top: 30px;
+    }
+
+        .cart-page .cart-page-inner {
+            padding: 30px;
+            margin-bottom: 30px;
+            background: #ffffff;
+        }
+
+        .cart-page .table {
+            width: 100%;
+            text-align: center;
+            margin-bottom: 0;
+            border: 2px solid #d68b00;
+        }
+
+            .cart-page .table .thead-dark th {
+                font-family: 'Source Code Pro', monospace;
+                font-size: 18px;
+                font-weight: 700;
+                color: #353535;
+                text-align: center;
+                background: transparent;
+                border-color: #dddddd;
+                border-bottom: none;
+                vertical-align: middle;
+            }
+
+            .cart-page .table td {
+                font-size: 16px;
+                vertical-align: middle;
+            }
+
+            .cart-page .table .img {
+                display: flex;
+                align-items: center;
+            }
+
+                .cart-page .table .img img {
+                    max-width: 60px;
+                    max-height: 60px;
+                    margin-right: 15px;
+                }
+
+                .cart-page .table .img p {
+                    display: inline-block;
+                    text-align: left;
+                    margin: 0;
+                }
+
+</style>

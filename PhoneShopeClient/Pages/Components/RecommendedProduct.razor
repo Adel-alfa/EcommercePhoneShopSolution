@@ -1,0 +1,160 @@
+﻿@implements IDisposable
+
+<div class="container-fluid">
+    <div id="productCarousel" class="carousel slide" data-bs-ride="carousel">
+        <!-- Carousel Indicators -->
+        <div class="carousel-indicators">
+            @for (int i = 0; i < RecommendedProducts.Count; i++)
+            {
+                <button type="button" data-bs-target="#productCarousel" data-bs-slide-to="@i" class="@(i == 0 ? "active" : "")" aria-current="@(i == 0 ? "true" : "false")" aria-label="Slide @(i + 1)"></button>
+            }
+        </div>
+
+        <!-- Carousel Products -->
+        <div class="carousel-inner">
+            @foreach (var itmmDic in RecommendedProducts)
+            {
+                <div class="carousel-item @(itmmDic.Key == RecommendedProducts.First().Key ? "active" : "")">
+                    <div class="row">
+                        @foreach (var Product in itmmDic.Value)
+                        {
+                            <div class="col-lg-2 card-container_display">
+                                <div class="card shadow">
+                                    <div class="card-body d-flex justify-content-between">
+                                        <img src="@Product.Base64Img" width="140" height="150" class="d-flex justify-content-center" style="margin-right:5px;" />
+                                        <div class="text-start">
+                                            <h5>@Product.Name</h5>
+                                            <h6>@(General.GetDescription(Product.Description!))</h6>
+                                            <h6 class="text-danger">@Product.Price.ToString("C", CultureInfo.CreateSpecificCulture("fr-FR"))</h6>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Carousel Controls -->
+        <button class="carousel-control-prev" type="button" data-bs-target="#productCarousel" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Previous</span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#productCarousel" data-bs-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Next</span>
+        </button>
+    </div>
+</div>
+
+
+@code {
+    List<Product>? FeaturedProductList { get; set; } = new();
+    Dictionary<int, List<Product>>? RecommendedProducts = new();
+    protected async override Task OnInitializedAsync()
+    {
+        bool featured = true;
+        await ProductService.GetAllProducts(featured);
+        FeaturedProductList = ProductService.FeaturedProducts;
+        ProductService.ProductAction += StateHasChanged;
+        Poplate();
+    }
+    void Poplate()
+    {
+        int itemPreview = 6;
+        int totalProducts = ProductService.FeaturedProducts.Count;
+        int numberOfGroups = totalProducts / itemPreview;
+        int startNo = 1;
+        int skip = 0;
+        if (numberOfGroups <= 0) return;
+        while (startNo <= numberOfGroups)
+        {
+            var products = ProductService.FeaturedProducts.Skip(skip).Take(itemPreview).ToList();
+            RecommendedProducts.Add(startNo, products);
+            skip += itemPreview;
+            startNo++;
+        }
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+
+        if (firstRender)
+        {
+            await js.InvokeVoidAsync("startCarousels");
+        }
+    }
+    public void Dispose()
+    {
+        ProductService.ProductAction -= StateHasChanged;
+    }
+}
+<style>
+   
+    .carousel-indicators [data-bs-target] {
+        width: 15px;
+        height: 15px; 
+        background-color: #ff5722; 
+        border: 2px solid #ff5722;
+        border-radius: 50%; 
+        opacity: 0.7; 
+    }
+
+   
+    .carousel-indicators .active {
+        background-color: #ff9800; 
+        border: 2px solid #ff9800;
+        opacity: 1; 
+    }
+
+   
+    .carousel-control-prev-icon,
+    .carousel-control-next-icon {
+        background-color: #ff5722; 
+        border-radius: 50%; 
+        width: 50px;
+        height: 50px;
+        background-size: 50%, 50%; 
+    }
+
+    .card-container_display {
+    width: 100%;  
+    max-width: 300px;  
+    height: 350px;  
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 5px auto; 
+    
+}
+ 
+.card-container_display .card {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column; 
+    border: 2px solid #ff9800;
+    background-color: rgba(	255, 245, 231,0.1); 
+}
+
+
+.card-container_display img {
+    max-width: 100%; 
+    max-height: 100%; 
+    object-fit: cover;
+}
+.card-container_display .card-body {
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+    white-space: nowrap; 
+    display: flex;
+    flex-direction: column; 
+    color:#0F172B;
+}
+
+.card-container_display .text-start {
+    overflow-wrap: break-word; 
+    white-space: normal;
+}
+
+</style>
